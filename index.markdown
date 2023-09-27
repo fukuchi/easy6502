@@ -22,7 +22,8 @@ so's Latin. And they still teach that.
 [Q.E.D.](http://en.wikipedia.org/wiki/Q.E.D.)
 
 (Actually, I've been reliably informed that 6502 processors are still being
-produced by [Western Design Center](http://www.65xx.com/wdc/), so clearly 6502
+produced by [Western Design Center](http://www.westerndesigncenter.com/wdc/w65c02s-chip.cfm)
+and [sold to hobbyists](http://www.mouser.co.uk/Search/Refine.aspx?Keyword=65C02), so clearly 6502
 *isn't* a dead language! Who knew?)
 
 Seriously though, I think it's valuable to have an understanding of assembly
@@ -90,7 +91,7 @@ So, the instruction `STA $0200` stores the value of the `A` register to memory
 location `$0200`. Click **Step** four more times to execute the rest of the
 instructions, keeping an eye on the `A` register as it changes.
 
-###Exercises###
+### Exercises ###
 
 1. Try changing the colour of the three pixels.
 2. Change one of the pixels to draw at the bottom-right corner (memory location `$05ff`).
@@ -118,7 +119,7 @@ location `$0600`, so `PC` always starts there.
 The last section shows the processor flags. Each flag is one bit, so all seven
 flags live in a single byte. The flags are set by the processor to give
 information about the previous instruction. More on that later. [Read more
-about the registers and flags here](http://www.obelisk.demon.co.uk/6502/registers.html).
+about the registers and flags here](https://web.archive.org/web/20210626024532/http://www.obelisk.me.uk/6502/registers.html).
 
 
 <h2 id='instructions'>Instructions</h2>
@@ -169,12 +170,12 @@ is set by all instructions where the result is zero.
 
 A full list of the 6502 instruction set is [available
 here](http://www.6502.org/tutorials/6502opcodes.html) and
-[here](http://www.obelisk.demon.co.uk/6502/reference.html) (I usually refer to
+[here](http://www.obelisk.me.uk/6502/reference.html) (I usually refer to
 both pages as they have their strengths and weaknesses). These pages detail the
 arguments to each instruction, which registers they use, and which flags they
 set. They are your bible.
 
-###Exercises###
+### Exercises ###
 
 1. You've seen `TAX`. You can probably guess what `TAY`, `TXA` and `TYA` do,
    but write some code to test your assumptions.
@@ -208,7 +209,7 @@ First we load the value `$08` into the `X` register. The next line is a label.
 Labels just mark certain points in a program so we can return to them later.
 After the label we decrement `X`, store it to `$0200` (the top-left pixel), and
 then compare it to the value `$03`.
-[`CPX`](http://www.obelisk.demon.co.uk/6502/reference.html#CPX) compares the
+[`CPX`](http://www.obelisk.me.uk/6502/reference.html#CPX) compares the
 value in the `X` register with another value. If the two values are equal, the
 `Z` flag is set to `1`, otherwise it is set to `0`.
 
@@ -224,7 +225,7 @@ branch instructions can only go forward and back around 256 bytes. This means
 they can only be used to move around local code. For moving further you'll need
 to use the jumping instructions.
 
-###Exercises###
+### Exercises ###
 
 1. The opposite of `BNE` is `BEQ`. Try writing a program that uses `BEQ`.
 2. `BCC` and `BCS` ("branch on carry clear" and "branch on carry set") are used
@@ -244,13 +245,13 @@ number of bytes to display from that location. Both of these are hex values.
 For example, to display 16 bytes of memory from `$c000`, enter `c000` and `10`
 into **Start** and **Length**, respectively.
 
-###Absolute: `$c000`###
+### Absolute: `$c000` ###
 
 With absolute addressing, the full memory location is used as the argument to the instruction. For example:
 
     STA $c000 ;Store the value in the accumulator at memory location $c000
 
-###Zero page: `$c0`###
+### Zero page: `$c0` ###
 
 All instructions that support absolute addressing (with the exception of the jump
 instructions) also have the option to take a single-byte address. This type of
@@ -258,7 +259,7 @@ addressing is called "zero page" - only the first page (the first 256 bytes) of
 memory is accessible. This is faster, as only one byte needs to be looked up,
 and takes up less space in the assembled code as well.
 
-###Zero page,X: `$c0,X`###
+### Zero page,X: `$c0,X` ###
 
 This is where addressing gets interesting. In this mode, a zero page address is given, and then the value of the `X` register is added. Here is an example:
 
@@ -273,18 +274,20 @@ If the result of the addition is larger than a single byte, the address wraps ar
     LDX #$05
     STA $ff,X ;Store the value of A at memory location $04
 
-###Zero page,Y: `$c0,Y`###
+### Zero page,Y: `$c0,Y` ###
 
 This is the equivalent of zero page,X, but can only be used with `LDX` and `STX`.
 
-###Absolute,X and absolute,Y: `$c000,X` and `$c000,Y`###
+### Absolute,X and absolute,Y: `$c000,X` and `$c000,Y` ###
 
 These are the absolute addressing versions of zero page,X and zero page,Y. For example:
 
     LDX #$01
     STA $0200,X ;Store the value of A at memory location $0201
 
-###Immediate: `#$c0`###
+Unlike zero page,Y, absolute,Y can't be used with `STX` but can be used with `LDA` and `STA`.
+
+### Immediate: `#$c0` ###
 
 Immediate addressing doesn't strictly deal with memory addresses - this is the
 mode where actual values are used. For example, `LDX #$01` loads the value
@@ -292,7 +295,7 @@ mode where actual values are used. For example, `LDX #$01` loads the value
 instruction `LDX $01` which loads the value at memory location `$01` into the
 `X` register.
 
-###Relative: `$c0` (or label)###
+### Relative: `$c0` (or label) ###
 
 Relative addressing is used for branching instructions. These instructions take
 a single byte, which is used as an offset from the following instruction.
@@ -321,13 +324,13 @@ address (e.g. change `STA $22` to `STA $2222`). Reassemble the code and look at
 the hexdump again - the argument to `BNE` should now be `03`, because the
 instruction the processor is skipping past is now three bytes long.
 
-###Implicit###
+### Implicit ###
 
 Some instructions don't deal with memory locations (e.g. `INX` - increment the
 `X` register). These are said to have implicit addressing - the argument is
 implied by the instruction.
 
-###Indirect: `($c000)`###
+### Indirect: `($c000)` ###
 
 Indirect addressing uses an absolute address to look up another address. The
 first address gives the least significant byte of the address, and the
@@ -349,7 +352,7 @@ address `$cc01`, which becomes the new program counter. Assemble and step
 through the program above to see what happens. I'll talk more about `JMP` in
 the section on [Jumping](#jumping).
 
-###Indexed indirect: `($c0,X)`###
+### Indexed indirect: `($c0,X)` ###
 
 This one's kinda weird. It's like a cross between zero page,X and indirect.
 Basically, you take the zero page address, add the value of the `X` register to
@@ -359,24 +362,24 @@ it, then use that to look up a two-byte address. For example:
 LDX #$01
 LDA #$05
 STA $01
-LDA #$06
+LDA #$07
 STA $02
 LDY #$0a
-STY $0605
+STY $0705
 LDA ($00,X)
 {% include end.html %}
 
-Memory locations `$01` and `$02` contain the values `$05` and `$06`
+Memory locations `$01` and `$02` contain the values `$05` and `$07`
 respectively. Think of `($00,X)` as `($00 + X)`. In this case `X` is `$01`, so
 this simplifies to `($01)`. From here things proceed like standard indirect
-addressing - the two bytes at `$01` and `$02` (`$05` and `$06`) are looked up
-to form the address `$0605`.  This is the address that the `Y` register was
+addressing - the two bytes at `$01` and `$02` (`$05` and `$07`) are looked up
+to form the address `$0705`.  This is the address that the `Y` register was
 stored into in the previous instruction, so the `A` register gets the same
 value as `Y`, albeit through a much more circuitous route. You won't see this
 much.
 
 
-###Indirect indexed: `($c0),Y`###
+### Indirect indexed: `($c0),Y` ###
 
 Indirect indexed is like indexed indirect but less insane. Instead of adding
 the `X` register to the address *before* dereferencing, the zero page address
@@ -397,7 +400,7 @@ In this case, `($01)` looks up the two bytes at `$01` and `$02`: `$03` and
 `$07`. These form the address `$0703`. The value of the `Y` register is added
 to this address to give the final address `$0704`.
 
-###Exercise###
+### Exercise ###
 
 1. Try to write code snippets that use each of the 6502 addressing modes.
    Remember, you can use the monitor to watch a section of memory.
@@ -450,7 +453,7 @@ using labels, and the assembler works out the correct memory location from the
 label. For larger programs though, jumping is the only way to move from one
 section of the code to another.
 
-###JMP###
+### JMP ###
 
 `JMP` is an unconditional jump. Here's a really simple example to show it in action:
 
@@ -465,7 +468,7 @@ there:
 {% include end.html %}
 
 
-###JSR/RTS###
+### JSR/RTS ###
 
 `JSR` and `RTS` ("jump to subroutine" and "return from subroutine") are a
 dynamic duo that you'll usually see used together. `JSR` is used to jump from
@@ -523,7 +526,7 @@ You can use letters, digits and underscores in a name.
 
 Here's an example. Note that immediate operands are still prefixed with a `#`.
 {% include start.html %}
-  define  sysRandom  $fe ; an adress
+  define  sysRandom  $fe ; an address
   define  a_dozen    $0c ; a constant
  
   LDA sysRandom  ; equivalent to "LDA $fe"
@@ -541,7 +544,7 @@ with that for more details.
 {% include snake.html %}
 
 
-###Overall structure###
+### Overall structure ###
 
 After the initial block of comments (lines starting with semicolons), the first
 two lines are:
@@ -574,7 +577,7 @@ of it like a sleep command. The game keeps running until the snake collides
 with the wall or itself.
 
 
-###Zero page usage###
+### Zero page usage ###
 
 The zero page of memory is used to store a number of game state variables, as
 noted in the comment block at the top of the game. Everything in `$00`, `$01`
@@ -582,8 +585,8 @@ and `$10` upwards is a pair of bytes representing a two-byte memory location
 that will be looked up using indirect addressing.  These memory locations will
 all be between `$0200` and `$05ff` - the section of memory corresponding to the
 simulator display. For example, if `$00` and `$01` contained the values `$01`
-and `$02`, they would be referring to the second pixel of the display (`$0201`
-- remember, the least significant byte comes first in indirect addressing).
+and `$02`, they would be referring to the second pixel of the display (
+`$0201` - remember, the least significant byte comes first in indirect addressing).
 
 The first two bytes hold the location of the apple. This is updated every time
 the snake eats the apple. Byte `$02` contains the current direction. `1` means
@@ -594,7 +597,7 @@ Finally, byte `$03` contains the current length of the snake, in terms of bytes
 in memory (so a length of 4 means 2 pixels).
 
 
-###Initialization###
+### Initialization ###
 
 The `init` subroutine defers to two subroutines, `initSnake` and
 `generateApplePosition`. `initSnake` sets the snake direction, length, and then
@@ -632,12 +635,12 @@ stored into `$00`. Next, a different random byte is loaded into the
 accumulator, which is then `AND`-ed with the value `$03`. This part requires a
 bit of a detour.
 
-The hex value `$03` is represented in binary as `00000111`. The `AND` opcode
+The hex value `$03` is represented in binary as `00000011`. The `AND` opcode
 performs a bitwise AND of the argument with the accumulator. For example, if
-the accumulator contains the binary value `01010101`, then the result of `AND`
-with `00000111` will be `00000101`.
+the accumulator contains the binary value `10101010`, then the result of `AND`
+with `00000011` will be `00000010`.
 
-The effect of this is to mask out the least significant three bytes of the
+The effect of this is to mask out the least significant two bits of the
 accumulator, setting the others to zero. This converts a number in the range of
 0&ndash;255 to a number in the range of 0&ndash;3.
 
@@ -650,19 +653,19 @@ first with indirect addressing, this translates into a memory address between
 `$0200` and `$05ff`: the exact range used to draw the display.
 
 
-###The game loop###
+### The game loop ###
 
 Nearly all games have at their heart a game loop. All game loops have the same
 basic form: accept user input, update the game state, and render the game
 state. This loop is no different.
 
 
-####Reading the input####
+#### Reading the input ####
 
 The first subroutine, `readKeys`, takes the job of accepting user input. The
 memory location `$ff` holds the ascii code of the most recent key press in this
 simulator. The value is loaded into the accumulator, then compared to `$77`
-(the hex code for W), `$64` (D), `$73` (S) and `$61`. If any of these
+(the hex code for W), `$64` (D), `$73` (S) and `$61` (A). If any of these
 comparisons are successful, the program branches to the appropriate section.
 Each section (`upKey`, `rightKey`, etc.) first checks to see if the current
 direction is the opposite of the new direction. This requires another little detour.
@@ -688,7 +691,7 @@ branch to `illegalMove`, which just returns from the subroutine. Otherwise, the
 new direction (1 in this case) is stored in the appropriate memory location.
 
 
-####Updating the game state####
+#### Updating the game state ####
 
 The next subroutine, `checkCollision`, defers to `checkAppleCollision` and
 `checkSnakeCollision`. `checkAppleCollision` just checks to see if the two
@@ -753,7 +756,7 @@ These strips map to `$0200-$02ff`, `$0300-$03ff`, `$0400-$04ff` and `$0500-$05ff
 The first rows of pixels are `$0200-$021f`, `$0220-$023f`, `$0240-$025f`, etc.
 
 As long as you're moving within one of these horizontal strips, things are
-simple. For example, to move right, just incrememnt the least significant byte
+simple. For example, to move right, just increment the least significant byte
 (e.g. `$0200` becomes `$0201`). To go down, add `$20` (e.g. `$0200` becomes
 `$0220`). Left and up are the reverse.
 
@@ -784,7 +787,7 @@ I won't explain in depth how each of the directions work, but the above
 explanation should give you enough to work it out with a bit of study.
 
 
-####Rendering the game####
+#### Rendering the game ####
 
 Because the game state is stored in terms of pixel locations, rendering the
 game is very straightforward. The first subroutine, `drawApple`, is extremely
@@ -793,13 +796,14 @@ stores this value into `($00),y`. `$00` is where the location of the apple is
 stored, so `($00),y` dereferences to this memory location. Read the "Indirect
 indexed" section in [Addressing modes](#addressing) for more details.
 
-Next comes `drawSnake`. This is pretty simple too. `X` is set to zero and `A`
-to one. We then store `A` at `($10,x)`. `$10` stores the two-byte location of
-the head, so this draws a white pixel at the current head position. Next we
-load `$03` into `X`. `$03` holds the length of the snake, so `($10,x)` in this
-case will be the location of the tail. Because `A` is zero now, this draws a
-black pixel over the tail. As only the head and the tail of the snake move,
-this is enough to keep the snake moving.
+Next comes `drawSnake`. This is pretty simple too - we first undraw the tail
+and then draw the head. `X` is set to the length of the snake, so we can index
+to the right pixel, and we set `A` to zero then perform the write using the
+indexed indirect addressing mode. Then we reload `X` to index to the head, set
+`A` to one and store it at `($10,x)`. `$10` stores the two-byte location of
+the head, so this draws a white pixel at the current head position. As only
+the head and the tail of the snake move, this is enough to keep the snake
+moving.
 
 The last subroutine, `spinWheels`, is just there because the game would run too
 fast otherwise. All `spinWheels` does is count `X` down from zero until it hits

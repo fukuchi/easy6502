@@ -45,15 +45,21 @@ function SimulatorWidget(node) {
       }
     });
     $node.find('.monitoring').change(function () {
-      ui.toggleMonitor();
-      simulator.toggleMonitor();
+      var state = this.checked;
+      ui.toggleMonitor(state);
+      simulator.toggleMonitor(state);
     });
     $node.find('.start, .length').blur(simulator.handleMonitorRangeChange);
     $node.find('.stepButton').click(simulator.debugExec);
     $node.find('.gotoButton').click(simulator.gotoAddr);
     $node.find('.notesButton').click(ui.showNotes);
-    $node.find('.code').on('keypress input', simulator.stop);
-    $node.find('.code').on('keypress input', ui.initialize);
+
+    var editor = $node.find('.code');
+
+    editor.on('keypress input', simulator.stop);
+    editor.on('keypress input', ui.initialize);
+    editor.keydown(ui.captureTabInEditor);
+
     $(document).keypress(memory.storeKeypress);
 
     simulator.handleMonitorRangeChange();
@@ -149,12 +155,31 @@ function SimulatorWidget(node) {
       setState(assembled);
     }
 
-    function toggleMonitor() {
-      $node.find('.monitor').toggle();
+    function toggleMonitor (state) {
+      $node.find('.monitor').toggle(state);
     }
 
     function showNotes() {
       $node.find('.messages code').html($node.find('.notes').html());
+    }
+
+    function captureTabInEditor(e) {
+      // Tab Key
+      if(e.keyCode === 9) {
+
+        // Prevent focus loss
+        e.preventDefault();
+
+        // Insert tab at caret position (instead of losing focus)
+        var caretStart = this.selectionStart,
+            caretEnd   = this.selectionEnd,
+            currentValue = this.value;
+
+        this.value = currentValue.substring(0, caretStart) + "\t" + currentValue.substring(caretEnd);
+
+        // Move cursor forwards one (after tab)
+        this.selectionStart = this.selectionEnd = caretStart + 1;
+      }
     }
 
     return {
@@ -165,7 +190,8 @@ function SimulatorWidget(node) {
       debugOn: debugOn,
       debugOff: debugOff,
       toggleMonitor: toggleMonitor,
-      showNotes: showNotes
+      showNotes: showNotes,
+      captureTabInEditor: captureTabInEditor
     };
   }
 
@@ -520,7 +546,7 @@ function SimulatorWidget(node) {
         var zp = popByte();
         var value = memory.get(zp);
         setCarryFlagFromBit7(value);
-        value = value << 1;
+        value = (value << 1) & 0xff;
         memory.storeByte(zp, value);
         ASL(value);
       },
@@ -550,7 +576,7 @@ function SimulatorWidget(node) {
         var addr = popWord();
         var value = memory.get(addr);
         setCarryFlagFromBit7(value);
-        value = value << 1;
+        value = (value << 1) & 0xff;
         memory.storeByte(addr, value);
         ASL(value);
       },
@@ -578,7 +604,7 @@ function SimulatorWidget(node) {
         var addr = (popByte() + regX) & 0xff;
         var value = memory.get(addr);
         setCarryFlagFromBit7(value);
-        value = value << 1;
+        value = (value << 1) & 0xff;
         memory.storeByte(addr, value);
         ASL(value);
       },
@@ -603,7 +629,7 @@ function SimulatorWidget(node) {
         var addr = popWord() + regX;
         var value = memory.get(addr);
         setCarryFlagFromBit7(value);
-        value = value << 1;
+        value = (value << 1) & 0xff;
         memory.storeByte(addr, value);
         ASL(value);
       },
@@ -642,7 +668,7 @@ function SimulatorWidget(node) {
         var addr = popByte();
         var value = memory.get(addr);
         setCarryFlagFromBit7(value);
-        value = value << 1;
+        value = (value << 1) & 0xff;
         value |= sf;
         memory.storeByte(addr, value);
         ROL(value);
@@ -682,7 +708,7 @@ function SimulatorWidget(node) {
         var addr = popWord();
         var value = memory.get(addr);
         setCarryFlagFromBit7(value);
-        value = value << 1;
+        value = (value << 1) & 0xff;
         value |= sf;
         memory.storeByte(addr, value);
         ROL(value);
@@ -712,7 +738,7 @@ function SimulatorWidget(node) {
         var addr = (popByte() + regX) & 0xff;
         var value = memory.get(addr);
         setCarryFlagFromBit7(value);
-        value = value << 1;
+        value = (value << 1) & 0xff;
         value |= sf;
         memory.storeByte(addr, value);
         ROL(value);
@@ -741,7 +767,7 @@ function SimulatorWidget(node) {
         var addr = popWord() + regX;
         var value = memory.get(addr);
         setCarryFlagFromBit7(value);
-        value = value << 1;
+        value = (value << 1) & 0xff;
         value |= sf;
         memory.storeByte(addr, value);
         ROL(value);
@@ -1395,6 +1421,13 @@ function SimulatorWidget(node) {
         //NOP
       },
 
+      i42: function () {
+        //WDM  -- pseudo op for emulator: arg 0 to output A to message box
+        var value = popByte();
+        if (value == 0)
+          message(String.fromCharCode(regA));
+      },
+
       iec: function () {
         var value = memory.get(popWord());
         doCompare(regX, value);
@@ -1665,10 +1698,11 @@ function SimulatorWidget(node) {
     function stop() {
       codeRunning = false;
       clearInterval(executeId);
+      message("\nStopped\n");
     }
 
-    function toggleMonitor() {
-      monitoring = !monitoring;
+    function toggleMonitor (state) {
+      monitoring = state;
     }
 
     return {
@@ -1792,6 +1826,7 @@ function SimulatorWidget(node) {
     var defaultCodePC;
     var codeLen;
     var codeAssembledOK = false;
+    var wasOutOfRangeBranch = false;
 
     var Opcodes = [
       /* Name, Imm,  ZP,   ZPX,  ZPY,  ABS, ABSX, ABSY,  IND, INDX, INDY, SNGL, BRA */
@@ -1851,12 +1886,15 @@ function SimulatorWidget(node) {
       ["PLP", null, null, null, null, null, null, null, null, null, null, 0x28, null],
       ["STX", null, 0x86, null, 0x96, 0x8e, null, null, null, null, null, null, null],
       ["STY", null, 0x84, 0x94, null, 0x8c, null, null, null, null, null, null, null],
+      ["WDM", 0x42, 0x42, null, null, null, null, null, null, null, null, null, null],
       ["---", null, null, null, null, null, null, null, null, null, null, null, null]
     ];
     
     // Assembles the code into memory
     function assembleCode() {
       var BOOTSTRAP_ADDRESS = 0x600;
+
+      wasOutOfRangeBranch = false;
   
       simulator.reset();
       labels.reset();
@@ -1898,8 +1936,15 @@ function SimulatorWidget(node) {
         ui.assembleSuccess();
         memory.set(defaultCodePC, 0x00); //set a null byte at the end of the code
       } else {
+
         var str = lines[i].replace("<", "&lt;").replace(">", "&gt;");
-        message("**Syntax error line " + (i + 1) + ": " + str + "**");
+
+        if(!wasOutOfRangeBranch) {
+          message("**Syntax error line " + (i + 1) + ": " + str + "**");
+        } else {
+          message('**Out of range branch on line ' + (i + 1) + ' (branches are limited to -128 to +127): ' + str + '**');
+        }
+
         ui.initialize();
         return false;
       }
@@ -2037,6 +2082,9 @@ function SimulatorWidget(node) {
           if (ch === "$") {
             number = parseInt(str.replace(/^\$/, ""), 16);
             pushByte(number);
+          } else if (ch ==="%") {
+            number = parseInt(str.replace(/^%/, ""), 2)
+            pushByte(number)
           } else if (ch >= "0" && ch <= "9") {
             number = parseInt(str, 10);
             pushByte(number);
@@ -2059,17 +2107,24 @@ function SimulatorWidget(node) {
       }
       
       var value;
-    
+      var match_data;
+
+      // Is it a decimal operand?
+      match_data = param.match(/^([0-9]{1,3})$/);
+      if (match_data) {
+        value = parseInt(match_data[1], 10);
+      }
+
       // Is it a hexadecimal operand?
-      var match_data = param.match(/^\$([0-9a-f]{1,2})$/i);
+      match_data = param.match(/^\$([0-9a-f]{1,2})$/i);
       if (match_data) {
         value = parseInt(match_data[1], 16);
-      } else {
-        // Is it a decimal operand?
-        match_data = param.match(/^([0-9]{1,3})$/i);
-        if (match_data) {
-          value = parseInt(match_data[1], 10);
-        }
+      }
+
+      // Is it a binary operand?
+      match_data = param.match(/^%([0-1]{1,8})$/);
+      if (match_data) {
+        value = parseInt(match_data[1], 2);
       }
       
       // Validate range
@@ -2123,11 +2178,15 @@ function SimulatorWidget(node) {
       }
       if (addr === -1) { pushWord(0x00); return false; }
       pushByte(opcode);
-      if (addr < (defaultCodePC - 0x600)) {  // Backwards?
-        pushByte((0xff - ((defaultCodePC - 0x600) - addr)) & 0xff);
-        return true;
+
+      var distance = addr - defaultCodePC - 1;
+
+      if(distance < -128 || distance > 127) {
+          wasOutOfRangeBranch = true;
+          return false;
       }
-      pushByte((addr - (defaultCodePC - 0x600) - 1) & 0xff);
+
+      pushByte(distance);
       return true;
     }
 
@@ -2136,7 +2195,7 @@ function SimulatorWidget(node) {
       var value, label, hilo, addr;
       if (opcode === null) { return false; }
       
-      var match_data = param.match(/^#([\w\$]+)$/i);
+      var match_data = param.match(/^#([\w\$%]+)$/i);
       if (match_data) {
         var operand = tryParseByteOperand(match_data[1], symbols);
         if (operand >= 0) {
@@ -2601,7 +2660,9 @@ function SimulatorWidget(node) {
 
   // Prints text in the message window
   function message(text) {
-    $node.find('.messages code').append(text + '\n').scrollTop(10000);
+    if (text.length>1)
+      text += '\n'; // allow putc operations from the simulator (WDM opcode)
+    $node.find('.messages code').append(text).scrollTop(10000);
   }
 
   initialize();
