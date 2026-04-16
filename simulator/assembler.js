@@ -260,7 +260,7 @@ function SimulatorWidget(node) {
     // Poke a byte, don't touch any registers
     function storeByte(addr, value) {
       set(addr, value & 0xff);
-      if ((addr >= 0x200) && (addr <= 0x6ff)) {
+      if ((addr >= 0x200) && (addr <= 0x7ff)) {
         display.updatePixel(addr);
       }
     }
