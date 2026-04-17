@@ -230,8 +230,8 @@ function SimulatorWidget(node) {
 
     function updatePixel(addr) {
       ctx.fillStyle = palette[memory.get(addr) & 0x0f];
-      var y = Math.floor(addr / 32);
-      var x = addr % 32;
+      var y = Math.floor(addr / numX);
+      var x = addr % numX;
       ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
     }
 
