@@ -230,6 +230,7 @@ function SimulatorWidget(node) {
 
     function updatePixel(addr) {
       ctx.fillStyle = palette[memory.get(addr) & 0x0f];
+      // numX is the display width in pixels (32 columns).
       var y = Math.floor(addr / numX);
       var x = addr % numX;
       ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
