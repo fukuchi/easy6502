@@ -210,8 +210,8 @@ up:
   rts
 upup:
   dec snakeHeadH
-  lda #$ff
-  cmp snakeHeadH
+  lda snakeHeadH
+  cmp #$ff
   beq collision
   rts
 right:
@@ -229,8 +229,8 @@ down:
   rts
 downdown:
   inc snakeHeadH
-  lda #$6
-  cmp snakeHeadH
+  lda snakeHeadH
+  cmp #$6
   beq collision
   rts
 left:
