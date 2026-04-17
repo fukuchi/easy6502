@@ -210,8 +210,9 @@ up:
   rts
 upup:
   dec snakeHeadH
-  lda #$1
-  cmp snakeHeadH
+  ; moved above $0000-$05ff window (wrapped to $ffxx)
+  lda snakeHeadH
+  cmp #$ff
   beq collision
   rts
 right:
@@ -229,8 +230,9 @@ down:
   rts
 downdown:
   inc snakeHeadH
-  lda #$7
-  cmp snakeHeadH
+  ; moved below $0000-$05ff window (entered $06xx)
+  lda snakeHeadH
+  cmp #$6
   beq collision
   rts
 left:

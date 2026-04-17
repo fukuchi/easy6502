@@ -223,15 +223,16 @@ function SimulatorWidget(node) {
     function reset() {
       ctx.fillStyle = "black";
       ctx.fillRect(0, 0, width, height);
-      for(var i = 0; i < 0x200; i++) {
-          display.updatePixel(0x600 + i);
+      for(var i = 0; i < 0x600; i++) {
+          display.updatePixel(i);
       }
     }
 
     function updatePixel(addr) {
       ctx.fillStyle = palette[memory.get(addr) & 0x0f];
-      var y = Math.floor((addr - 0x200) / 32);
-      var x = (addr - 0x200) % 32;
+      // numX is the display width in pixels (32 columns).
+      var y = Math.floor(addr / numX);
+      var x = addr % numX;
       ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
     }
 
@@ -260,7 +261,7 @@ function SimulatorWidget(node) {
     // Poke a byte, don't touch any registers
     function storeByte(addr, value) {
       set(addr, value & 0xff);
-      if ((addr >= 0x200) && (addr <= 0x6ff)) {
+      if ((addr >= 0x00) && (addr <= 0x5ff)) {
         display.updatePixel(addr);
       }
     }
